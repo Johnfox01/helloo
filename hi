@@ -1,0 +1,49 @@
+import vk_api
+from vk_api.longpoll import VkLongPoll, VkEventType
+import json,traceback
+
+vk_session = vk_api.VkApi(token='vk1.a.nB9W6qtU9FXR1_besI8DPqc2Pe2o3xxe-27E1Z0mCbNvhHAbcMm46mX9B8WoE4-RhUGiRjH8-YvZEAfARc3x0LF25wB8fA6wBU_QijRfuSf5QC6Lc4EROr7lKpmK7BxuTpf84UgqEE2mD85nyoJ-tyWOWr7eJDRhWiYSRTCRWs2om9yGA46UUOGto4hL0xbT1f1UEsXSfENsbs1zHnenOg', api_version=5.131)
+api = vk_session.get_api()
+longpoll = VkLongPoll(vk_session, preload_messages=True)
+trusted = [653149550, 218846819]
+lp_user_id = 218846819
+print("Бот запущен")
+while True:
+    try:
+        for event in longpoll.listen():
+            if event.type != VkEventType.MESSAGE_NEW and event.type != VkEventType.MESSAGE_EDIT: continue
+            message = event.message_data
+            #if not message['out']: continue
+            # Если нужно, чтобы бот реагировал только на сообщения от хозяина страницы, нужно убрать комментирование на строке выше
+            args = message['text'].split(" ")
+            cmd = args[0].lower()
+            args = args[1:]
+            if cmd == 'п_пинг':
+                # Если нужно, чтобы бот редактировал отправленное сообщение: (я буду использовать именно этот способ)
+                api.messages.edit(peer_id=message['peer_id'], message_id=message['id'], message='Понг✅<br>Если видишь это значит работает', keep_forward_messages=1)
+                # Если нужно, чтобы бот отвечал новым сообщением:
+                # api.messages.send(peer_id=message['peer_id'], message='Понг✅<br>Если видишь это значит работает', random_id=0, forward=json.dumps({'peer_id': message['peer_id'], 'conversation_message_ids': message['conversation_message_id'], 'is_reply': 1}))
+
+            elif cmd == 'п_инфа':
+                api.messages.edit(peer_id=message['peer_id'], message_id=message['id'], message='VK-PFBot v0.0.1 beta<br>Из полезного пока только удалялка', keep_forward_messages=1)   
+            
+            elif cmd == 'п_параметрысбщ':
+                api.messages.edit(peer_id=message['peer_id'], message_id=message['id'], message='У сообщения такие параметры:\n'+'\n'.join([str(value)+': '+str(message[value]) for value in message]), keep_forward_messages=1)
+            
+            elif cmd == 'п_напиши' and event.user_id in trusted:
+                api.messages.send(peer_id=message['peer_id'], message_id=message['id'], random_id=0, message=message['text'].replace(cmd+' ', ''), keep_forward_messages=1)
+
+            elif cmd.startswith("пп"):
+                
+                cmd = cmd.split();
+                try:
+                    if not args: i = int(cmd[0].replace("пп",""));
+                    else: i = int(args[0]);
+                except:
+                    i = 1;
+                api.messages.delete(delete_for_all=1, message_ids=[x["id"] for x in api.messages.getHistory(peer_id=message["peer_id"], count=100)["items"] if lp_user_id == x["from_id"]][:i+1])
+                  
+               
+                
+    except Exception as e:
+        print(traceback.format_exc()
